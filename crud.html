@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Clientes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="recuadro">
+    <h2>Formulario de clientes</h2>
+    <form action="">
+        <label for="lnombre">Nombre Completo</label>
+        <input type="text" name="nombre" id="Lnombre" placeholder="Digitar nombre completo"><br>
+        <label for="Lcel">número celular</label>
+        <input type="tel" name="cel" id="Lcel" placeholder="##########" pattern="[0-9]{10}"><br>
+        <label for="Lnac">Fecha de nacimiento</label>
+        <input type="date" name="Fecha" id="Lnac" value="2026/05/30" min="1925-01-01"><br>
+        <label for="Lmail">Correo electronico</label>
+        <input type="email" name="email" id="email"><br>
+        <label for="Municipio">seleccione su ubicación</label>
+          <select name="Municipio" id="lbarrio">
+            <option value="Andes">Andes</option>
+            <option value="Betania">Betania</option>
+            <option value="Fredonia">Fredonia</option>
+            <option value="Hispania">Hispania</option>
+            <option value="Jardin">Jardin</option>
+            <option value="Jerico">Jericó</option>
+            <option value="Salgar">Salgar</option>
+            <option value="Urrao">Urrao</option>
+          </select><br>
+           <label for="ltexto">Comentarios</label><br>
+           <textarea name="texto" id="ltexto" cols="40" rows="15" placeholder="escriba las sugerencias"></textarea><br><br>
+         <input type="submit" value="crear">
+         <input type="submit" value="leer">
+         <input type="submit" value="actualizar">
+         <input type="submit" value="borrar">
+    </form>
+    </div>
+</body>
+</html>
+  <footer>
+    <p><a href="#">Tratamiento de datos</a></p>
+    <br>
+    <p>Todos los derechos reservados ©</p>
+    <p>🌍www.delcerezoalamesa.com</p>
+    <p>☎ 6042236598</p>
+    <p>📩delcerezoalamesa@gmail.com</p>
+    
+    <div class="redes">
+        <img src="images/Facebook.png" alt="Facebook">
+        <img src="images/Instagram.png" alt="Instagram">
+        <img src="images/whats app.png" alt="Whatsapp">
+
+    </div>
+</footer>
