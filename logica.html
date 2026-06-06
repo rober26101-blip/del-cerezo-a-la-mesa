@@ -1,111 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ejercicio de Lógica</title>
+    <title>Lógica de Programación - Del Cerezo a la Mesa</title>
     <link rel="stylesheet" href="style.css">
+   
 </head>
 <body>
-    <h2>Codigo de Ejercicio de Lógica de programación</h2>
-    <div class="recuadro">
-    <pre>
-        <code>
-       import java.util.Scanner;
 
-class Producto {
-    String nombreProducto;
-    double precio;
-    int stock;
+<main>
 
-    public Producto(String nombreProducto, double precio, int stock) {
-        this.nombreProducto = nombreProducto;
-        this.precio = precio;
-        this.stock = stock;
-    }
-}
+    <div class="titulo" style="text-align:center; margin-bottom:1.5rem;">
+        <h1>Lógica de Programación</h1>
+        <p>ingreso al sistema con <strong>while + if/else</strong> — máximo 3 intentos</p>
+    </div>
 
-public class DelCerezoALaMesa {
+    
+    <div class="logica-card">
+        <h2> Ingreso al Sistema</h2>
+        <p>Simula acceso al sistema de ventas. El usuario tiene <strong>máximo 3 intentos</strong> para ingresar correctamente.
+           Usa la estructura <code>while (i &lt;= 3)</code> con <code>if / else</code> para validar las credenciales.</p>
+        <p style="font-size:0.85rem; color:var(--cafe-claro);">
+            💡 Credenciales correctas: usuario <strong>code</strong> / clave <strong>123</strong>
+        </p>
+
+       
+        <div class="panel-login" id="panelLogin">
+            <div class="panel-header">☕ Ingreso al Sistema</div>
+            <div class="panel-body">
+                <label for="loginInput">Usuario</label>
+                <input type="text" id="loginInput" placeholder="Ingresa tu usuario" autocomplete="off">
+
+                <label for="claveInput">Clave</label>
+                <input type="password" id="claveInput" placeholder="Ingresa tu clave">
+
+                <div class="intentos-display">
+                    Intentos restantes:
+                    <span class="intento-dot" id="d1"></span>
+                    <span class="intento-dot" id="d2"></span>
+                    <span class="intento-dot" id="d3"></span>
+                </div>
+            </div>
+
+            <div class="resultado-login" id="resLogin"></div>
+
+            <div class="panel-footer">
+                <button class="btn-ingresar" id="btnIngresar" onclick="intentarLogin()">Ingresar</button>
+                <button class="btn-cancelar" onclick="cancelarLogin()">Cancelar</button>
+            </div>
+        </div>
+
+       
+        <div class="bienvenida" id="panelBienvenida">
+            <h3>✅ Bienvenido al programa</h3>
+            <p>Acceso concedido al sistema de ventas<br><em>Del Cerezo a la Mesa</em></p>
+            <button class="btn-logout" onclick="cerrarSesion()">🔒 Cerrar sesión</button>
+        </div>
+    </div>
+
+   <h2>Codigo Java import java.util.Scanner;</h2>
+   <br>
+
+
+public class LoginDelCerezo {
+
+    // Constantes de credenciales y límites
+    private static final String LOGIN_CORRECTO = "code";
+    private static final String CLAVE_CORRECTA = "123";
+    private static final int MAX_INTENTOS = 3;
+
     public static void main(String[] args) {
-        Scanner teclado = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
+        int intentos = 0; // Contador de intentos (equivalente a tu variable 'i')
+        boolean accesoConcedido = false;
 
-        Producto mermelada = new Producto("Mermelada Exótica 250g", 18000, 50);
-        Producto dulce = new Producto("Dulce Artesanal 150g", 12000, 80);
+        System.out.println(" ");
+        System.out.println("SISTEMA DE CONTROL DE ACCESO");
+        System.out.println("DEL CEREZO A LA MESA");
+        System.out.println(" ");
 
-        System.out.println("--- BIENVENIDO A DEL CEREZO A LA MESA ---");
-        System.out.println("Productos disponibles:");
-        System.out.println("1. " + mermelada.nombreProducto + " - $" + mermelada.precio + " (Stock: " + mermelada.stock + ")");
-        System.out.println("2. " + dulce.nombreProducto + " - $" + dulce.precio + " (Stock: " + dulce.stock + ")");
-        
-        
-        System.out.print("\nSelecciona el número del producto que deseas comprar: ");
-        int opcion = teclado.nextInt();
-        
-        System.out.print("¿Cuántas unidades deseas llevar?: ");
-        int cantidadSolicitada = teclado.nextInt();
+        // El bucle se ejecuta mientras no se superen los intentos y no haya ingresado
+        while (intentos < MAX_INTENTOS && !accesoConcedido) {
+            
+            System.out.print("\nIngrese su usuario: ");
+            String loginInput = scanner.nextLine().trim();
 
-        Producto productoSeleccionado = null;
+            System.out.print("Ingrese su contraseña: ");
+            String claveInput = scanner.nextLine().trim();
 
-        if (opcion == 1) {
-            productoSeleccionado = mermelada;
-        } else if (opcion == 2) {
-            productoSeleccionado = dulce;
-        } else {
-            System.out.println("Opción no válida.");
-        }
-
-        if (productoSeleccionado != null) {
-            if (cantidadSolicitada <= productoSeleccionado.stock) {
-                // Cálculo del subtotal
-                double subtotal = cantidadSolicitada * productoSeleccionado.precio;
-                
-                
-                productoSeleccionado.stock -= cantidadSolicitada;
-
-                System.out.println("\n--- RESUMEN DE COMPRA ---");
-                System.out.println("Producto: " + productoSeleccionado.nombreProducto);
-                System.out.println("Cantidad: " + cantidadSolicitada);
-                System.out.println("Total a pagar: $" + subtotal);
-                System.out.println("Estado del Pedido: Pendiente");
-                System.out.println("Nuevo Stock disponible: " + productoSeleccionado.stock);
+            // Validación de credenciales
+            if (loginInput.equals(LOGIN_CORRECTO) && claveInput.equals(CLAVE_CORRECTA)) {
+                accesoConcedido = true; 
             } else {
-                System.out.println("\n[ERROR] No se pudo procesar el pedido.");
-                System.out.println("Motivo: Stock insuficiente. Solo quedan " + productoSeleccionado.stock + " unidades.");
+                intentos++; // Incrementar contador de intentos fallidos
+                marcarIntentoFallido(intentos);
             }
         }
+
+        // 4. Manejo del resultado final del login
+        evaluarResultadoLogin(accesoConcedido);
+
+        scanner.close();
+    }
+
+    /**
+     * Método equivalente a 'marcarIntento(i)' en tu JavaScript.
+     * Muestra visualmente el estado del error según el intento actual.
+     */
+    private static void marcarIntentoFallido(int intentoActual) {
+        if (intentoActual < MAX_INTENTOS) {
+            System.out.println("\n ");
+            System.out.printf("❌ Clave incorrecta. Intento %d de %d.%n", intentoActual, MAX_INTENTOS);
+            System.out.println(" ");
+        }
+    }
+
+    /**
+     * Procesa y muestra el desenlace final del intento de login.
+     */
+    private static void evaluarResultadoLogin(boolean exito) {
+        System.out.println("\n ");
+        if (exito) {
+            System.out.println("✅ Bienvenido al programa.");
+            System.out.println("Acceso concedido exitosamente.");
+            // Aquí podrías llamar a tu método mostrarBienvenida() o iniciar la App de ventas
+        } else {
+            System.out.println("🔒 Sistema bloqueado.");
+            System.out.println("Demasiados intentos fallidos de inicio de sesión.");
+        }
+        System.out.println(" ");
     }
 }
-        </code>
-    </pre>
-</div>
-<h2>otro titulo</h2>
-<p>CREATE DATABASE del_cerezo_a_la_mesa; USE del_cerezo_a_la_mesa; -- Tabla Categoria 
-CREATE TABLE Categoria ( id_Categoria INT PRIMARY KEY AUTO_INCREMENT, nombre_Categoria VARCHAR(80) NOT NULL, descripcion TEXT ); 
-CREATE TABLE Cliente ( id_Cliente INT PRIMARY KEY AUTO_INCREMENT, nombre VARCHAR(60) NOT NULL, apellido VARCHAR(60) NOT NULL, telefono VARCHAR(15), email VARCHAR(100) UNIQUE NOT NULL, barrio VARCHAR(60), fecha_Registro DATE DEFAULT (CURRENT_DATE) ); -- Tabla Producto 
-CREATE TABLE Producto ( id_Producto INT PRIMARY KEY AUTO_INCREMENT, nombre_Producto VARCHAR(100) NOT NULL, descripcion TEXT, Precio DECIMAL(10,2) NOT NULL, stock INT DEFAULT 0, id_Categoria INT, FOREIGN KEY (id_Categoria) REFERENCES Categoria(id_Categoria) );  
-CREATE TABLE Pedido ( id_Pedido INT PRIMARY KEY AUTO_INCREMENT, id_Cliente INT NOT NULL, fecha_Pedido DATETIME DEFAULT CURRENT_TIMESTAMP, total DECIMAL(10,2), estado ENUM('pendiente', 'enviado', 'entregado') DEFAULT 'pendiente', FOREIGN KEY (id_Cliente) REFERENCES Cliente(id_Cliente) )
-CREATE TABLE Detalle ( id_Detalle INT PRIMARY KEY AUTO_INCREMENT, id_Pedido INT NOT NULL, id_producto INT NOT NULL, cantidad INT NOT NULL, precio_unitario DECIMAL(10,2) NOT NULL, subtotal DECIMAL(10,2) NOT NULL, FOREIGN KEY (id_Pedido) REFERENCES Pedido(id_Pedido), FOREIGN KEY (id_producto) REFERENCES Producto(id_Producto) ); 
-INSERT INTO Categoria (nombre_Categoria, descripcion) VALUES ('Mermeladas', 'Conservas artesanales de cáscara de café'), ('Dulces', 'Confitería a base de cáscara de café'); INSERT INTO Producto (nombre_Producto, descripcion, Precio, stock, id_Categoria) VALUES ('Mermelada Exótica 250g', 'Rica en antioxidantes', 18000, 50, 1), ('Dulce Artesanal 150g', 'Textura glaseada', 12000, 80, 2); 
-INSERT INTO Cliente (nombre, apellido, telefono, email, barrio) VALUES ('Ana', 'García', '3001234567', 'ana@email.com', 'Manrique'), ('Carlos', 'Restrepo', '3119876543', 'carlos@email.com', 'Aranjuez'); 
-SELECT p.nombre_Producto, p.Precio, p.stock, c.nombre_Categoria FROM Producto p INNER JOIN Categoria c ON p.id_Categoria = c.id_Categoria; 
-SELECT cl.nombre, cl.apellido, pe.fecha_Pedido, pe.total, pe.estado FROM Pedido pe INNER JOIN Cliente cl ON pe.id_Cliente = cl.id_Cliente ORDER BY pe.fecha_Pedido DESC;  
-SELECT cl.nombre, pr.nombre_Producto, d.cantidad, d.precio_unitario, d.subtotal FROM Detalle d INNER JOIN Pedido pe ON d.id_Pedido = pe.id_Pedido INNER JOIN Cliente cl ON pe.id_Cliente = cl.id_Cliente INNER JOIN Producto pr ON d.id_producto = pr.id_Producto;
-</p>
-  <footer>
-    <p><a href="#">Tratamiento de datos</a></p>
-    <br>
-    <p>Todos los derechos reservados ©</p>
-    <p>🌍www.delcerezoalamesa.com</p>
-    <p>☎ 6042236598</p>
-    <p>📩delcerezoalamesa@gmail.com</p>
-    
-    <div class="redes">
-        <img src="images/Facebook.png" alt="Facebook">
-        <img src="images/Instagram.png" alt="Instagram">
-        <img src="images/whats app.png" alt="Whatsapp">
-
+        </div>
     </div>
+<br>
+<p>import java.util.Scanner;
+
+public class DelCerezoALaMesa {
+
+    // Constantes para los precios de los productos
+    private static final int PRECIO_MERMELADA = 18000;
+    private static final int PRECIO_DULCES = 12000;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.println(" ");
+        System.out.println("  BIENVENIDO A: DEL CEREZO A LA MESA   ");
+        System.out.println(" ");
+        
+        // 1. Solicitar cantidad de Mermeladas
+        System.out.println("\nProducto 1: Mermelada Exótica (Frasco de 250g)");
+        System.out.println("Precio unitario: $" + PRECIO_MERMELADA + " COP");
+        System.out.print("¿Cuántas unidades desea llevar?: ");
+        int cantMermelada = leerCantidad(scanner);
+
+        // 2. Solicitar cantidad de Dulces Artesanales
+        System.out.println("\nProducto 2: Dulces Artesanales (Paquete de 150g)");
+        System.out.println("Precio unitario: $" + PRECIO_DULCES + " COP");
+        System.out.print("¿Cuántas unidades desea llevar?: ");
+        int cantDulces = leerCantidad(scanner);
+
+        // 3. Realizar los cálculos de la venta
+        int subtotalMermelada = cantMermelada * PRECIO_MERMELADA;
+        int subtotalDulces = cantDulces * PRECIO_DULCES;
+        int totalPagar = subtotalMermelada + subtotalDulces;
+
+        // 4. Generar el recibo de venta
+        if (totalPagar > 0) {
+            generarRecibo(cantMermelada, subtotalMermelada, cantDulces, subtotalDulces, totalPagar);
+        } else {
+            System.out.println("\nNo se realizó ninguna venta. ¡Gracias por visitarnos!");
+        }
+
+        scanner.close();
+    }
+
+    /**
+     * Método auxiliar para validar que el usuario ingrese un número entero positivo
+     */
+    private static int leerCantidad(Scanner scanner) {
+        while (!scanner.hasNextInt()) {
+            System.out.println("Por favor, ingresa un número válido.");
+            scanner.next();
+        }
+        int cantidad = scanner.nextInt();
+        return Math.max(cantidad, 0); // Evita que ingresen números negativos
+    }
+
+    /**
+     * Método para imprimir el formato del recibo de pago
+     */
+    private static void generarRecibo(int cantMermelada, int subMermelada, int cantDulces, int subDulces, int total) {
+        System.out.println("\n ");
+        System.out.println("           FACTURA DE VENTA            ");
+        System.out.println(" ");
+        
+        if (cantMermelada > 0) {
+            System.out.printf("- Mermelada Exótica (250g) x%d : $%d COP%n", cantMermelada, subMermelada);
+        }
+        if (cantDulces > 0) {
+            System.out.printf("- Dulces Artesanales (150g) x%d: $%d COP%n", cantDulces, subDulces);
+        }
+        
+        System.out.println(" ");
+        System.out.printf("TOTAL A PAGAR:                  $%d COP%n", total);
+        System.out.println(" ");
+        System.out.println(" ¡Gracias por apoyar la sostenibilidad!");
+        System.out.println(" ");
+    }
+}</p>
+  
+    <div class="logica-card">
+        <h2>Tabla de flujo — while + if/else</h2>
+        <table class="tabla-flujo">
+            <thead>
+                <tr>
+                    <th>Intento (i)</th>
+                    <th>Condición while</th>
+                    <th>Login correcto</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>i = 0 (inicio)</td><td><span class="badge-w">i &lt;= 3 → entra</span></td><td><span class="badge-v">Sí</span></td><td>✅ Bienvenido — break</td></tr>
+                <tr><td>i = 1</td><td><span class="badge-w">i &lt;= 3 → entra</span></td><td><span class="badge-f">No</span></td><td>❌ Intento 1 de 3 — i = i+1</td></tr>
+                <tr><td>i = 2</td><td><span class="badge-w">i &lt;= 3 → entra</span></td><td><span class="badge-f">No</span></td><td>❌ Intento 2 de 3 — i = i+1</td></tr>
+                <tr><td>i = 3</td><td><span class="badge-w">i &lt;= 3 → entra</span></td><td><span class="badge-f">No</span></td><td>🔒 Bloqueado — i >= 3</td></tr>
+                <tr><td>i = 4</td><td><span class="badge-f">i &gt; 3 → sale</span></td><td>—</td><td>Fin del programa</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<script>
+let i = 0;
+
+function intentarLogin() {
+    const login    = document.getElementById('loginInput').value.trim();
+    const password = document.getElementById('claveInput').value.trim();
+    const res      = document.getElementById('resLogin');
+
+    while (i <= 3) {
+        if (login === 'code' && password === '123') {
+            res.className = 'resultado-login ok';
+            res.innerHTML = '✅ Bienvenido al programa';
+            mostrarBienvenida();
+            break;
+        } else {
+            i = i + 1;
+            marcarIntento(i);
+            if (i >= 3) {
+                res.className = 'resultado-login bloqueado';
+                res.innerHTML = '🔒 Sistema bloqueado. Demasiados intentos fallidos.';
+                document.getElementById('btnIngresar').disabled = true;
+                document.getElementById('loginInput').disabled  = true;
+                document.getElementById('claveInput').disabled  = true;
+            } else {
+                res.className = 'resultado-login error';
+                res.innerHTML = `❌ Clave incorrecta. Intento ${i} de 3`;
+            }
+            document.getElementById('claveInput').value = '';
+            document.getElementById('claveInput').focus();
+            break;
+        }
+    }
+}
+
+function marcarIntento(n) {
+    for (let j = 1; j <= n; j++) {
+        const dot = document.getElementById('d' + j);
+        if (dot) dot.classList.add('usado');
+    }
+}
+
+function mostrarBienvenida() {
+    document.getElementById('panelLogin').style.display = 'none';
+    document.getElementById('panelBienvenida').classList.add('show');
+}
+
+function cerrarSesion() {
+    i = 0;
+    ['d1','d2','d3'].forEach(id => document.getElementById(id).classList.remove('usado'));
+    document.getElementById('loginInput').value   = '';
+    document.getElementById('claveInput').value   = '';
+    document.getElementById('loginInput').disabled = false;
+    document.getElementById('claveInput').disabled = false;
+    document.getElementById('btnIngresar').disabled = false;
+    document.getElementById('resLogin').className  = 'resultado-login';
+    document.getElementById('panelLogin').style.display = '';
+    document.getElementById('panelBienvenida').classList.remove('show');
+}
+
+function cancelarLogin() {
+    cerrarSesion();
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('claveInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') intentarLogin();
+    });
+});
+</script>
+
+<footer>
+    <p><a href="#">Tratamiento de datos</a></p>
+    <p>Todos los derechos reservados ©</p>
+    <p>🌍 www.delcerezoalamesa.com</p>
+    <p>☎ 6042236598</p>
+    <p>📩 delcerezoalamesa@gmail.com</p>
 </footer>
-    
+
+
+
 </body>
 </html>

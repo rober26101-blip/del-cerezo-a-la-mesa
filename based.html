@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>codigo de ejercicio de base de datos</h1>
+    <div class="recuadro">
+        <pre>
+            <code>
+                IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'CafeDB')
+    CREATE DATABASE CafeDB;
+GO
+
+USE CafeDB;
+GO
+
+
+IF OBJECT_ID('dbo.Categoria', 'U') IS NOT NULL
+    DROP TABLE dbo.Categoria;
+GO
+
+CREATE TABLE dbo.Categoria (
+    id_Categoria    INT           IDENTITY(1,1)  NOT NULL,
+    nombre_Categoria VARCHAR(100)               NOT NULL,
+    descripcion     VARCHAR(255)               NULL,
+    CONSTRAINT PK_Categoria PRIMARY KEY (id_Categoria),
+    CONSTRAINT UQ_Categoria_Nombre UNIQUE (nombre_Categoria)
+);
+GO
+
+
+IF OBJECT_ID('dbo.Producto', 'U') IS NOT NULL
+    DROP TABLE dbo.Producto;
+GO
+
+CREATE TABLE dbo.Producto (
+    id_Producto     INT           IDENTITY(1,1)  NOT NULL,
+    nombre_Producto VARCHAR(150)               NOT NULL,
+    descripcion     VARCHAR(255)               NULL,
+    Precio          DECIMAL(10,2)              NOT NULL,
+    stock           INT                        NOT NULL  DEFAULT 0,
+    id_Categoria    INT                        NOT NULL,
+    CONSTRAINT PK_Producto   PRIMARY KEY (id_Producto),
+    CONSTRAINT FK_Producto_Categoria FOREIGN KEY (id_Categoria)
+        REFERENCES dbo.Categoria (id_Categoria),
+    CONSTRAINT CK_Producto_Precio CHECK (Precio >= 0),
+    CONSTRAINT CK_Producto_Stock  CHECK (stock  >= 0)
+);
+GO
+
+
+IF OBJECT_ID('dbo.Cliente', 'U') IS NOT NULL
+    DROP TABLE dbo.Cliente;
+GO
+
+CREATE TABLE dbo.Cliente (
+    id_Cliente      INT           IDENTITY(1,1)  NOT NULL,
+    nombre          VARCHAR(100)               NOT NULL,
+    apellido        VARCHAR(100)               NOT NULL,
+    telefono        VARCHAR(20)                NULL,
+    email           VARCHAR(150)               NULL,
+    barrio          VARCHAR(100)               NULL,
+    fecha_Registro  DATE                       NOT NULL  DEFAULT GETDATE(),
+    CONSTRAINT PK_Cliente    PRIMARY KEY (id_Cliente),
+    CONSTRAINT UQ_Cliente_Email UNIQUE (email)
+);
+GO
+
+
+IF OBJECT_ID('dbo.Pedido', 'U') IS NOT NULL
+    DROP TABLE dbo.Pedido;
+GO
+
+CREATE TABLE dbo.Pedido (
+    id_Pedido       INT           IDENTITY(1,1)  NOT NULL,
+    id_Cliente      INT                        NOT NULL,
+    fecha_Pedido    DATETIME                   NOT NULL  DEFAULT GETDATE(),
+    total           DECIMAL(12,2)              NOT NULL  DEFAULT 0,
+    estado          VARCHAR(50)                NOT NULL  DEFAULT 'Pendiente',
+    CONSTRAINT PK_Pedido     PRIMARY KEY (id_Pedido),
+    CONSTRAINT FK_Pedido_Cliente FOREIGN KEY (id_Cliente)
+        REFERENCES dbo.Cliente (id_Cliente),
+    CONSTRAINT CK_Pedido_Estado CHECK (estado IN ('Pendiente','En preparacion','Entregado','Cancelado')),
+    CONSTRAINT CK_Pedido_Total  CHECK (total  >= 0)
+);
+GO
+
+
+IF OBJECT_ID('dbo.Detalle_Pedido', 'U') IS NOT NULL
+    DROP TABLE dbo.Detalle_Pedido;
+GO
+
+CREATE TABLE dbo.Detalle_Pedido (
+    id_Detalle      INT           IDENTITY(1,1)  NOT NULL,
+    id_Pedido       INT                        NOT NULL,
+    id_Producto     INT                        NOT NULL,
+    cantidad        INT                        NOT NULL,
+    precio_unitario DECIMAL(10,2)              NOT NULL,
+    subtotal        AS (cantidad * precio_unitario) PERSISTED,
+    CONSTRAINT PK_Detalle    PRIMARY KEY (id_Detalle),
+    CONSTRAINT FK_Detalle_Pedido   FOREIGN KEY (id_Pedido)
+        REFERENCES dbo.Pedido   (id_Pedido),
+    CONSTRAINT FK_Detalle_Producto FOREIGN KEY (id_Producto)
+        REFERENCES dbo.Producto (id_Producto),
+    CONSTRAINT CK_Detalle_Cantidad CHECK (cantidad > 0),
+    CONSTRAINT CK_Detalle_PrecioU  CHECK (precio_unitario >= 0)
+);
+GO
+
+
+/* control de acceso  */
+
+-- Crear login y usuario de solo lectura para reportes
+IF NOT EXISTS (SELECT name FROM sys.server_principals WHERE name = 'cafe_reportes')
+BEGIN
+    CREATE LOGIN cafe_reportes WITH PASSWORD = 'ReporteCafe2024!';
+END
+GO
+
+IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'cafe_reportes')
+BEGIN
+    CREATE USER cafe_reportes FOR LOGIN cafe_reportes;
+END
+GO
+
+/* permisos para lectura */
+
+GRANT SELECT ON dbo.Cliente         TO cafe_reportes;
+GRANT SELECT ON dbo.Pedido          TO cafe_reportes;
+GRANT SELECT ON dbo.Detalle_Pedido  TO cafe_reportes;
+GRANT SELECT ON dbo.Producto        TO cafe_reportes;
+GRANT SELECT ON dbo.Categoria       TO cafe_reportes;
+GO
+
+ /* login y usuario operativo (puede insertar y actualizar) */
+
+IF NOT EXISTS (SELECT name FROM sys.server_principals WHERE name = 'cafe_operativo')
+BEGIN
+    CREATE LOGIN cafe_operativo WITH PASSWORD = 'OperCafe2024!';
+END
+GO
+
+IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'cafe_operativo')
+BEGIN
+    CREATE USER cafe_operativo FOR LOGIN cafe_operativo;
+END
+GO
+
+GRANT SELECT, INSERT, UPDATE ON dbo.Cliente         TO cafe_operativo;
+GRANT SELECT, INSERT, UPDATE ON dbo.Pedido          TO cafe_operativo;
+GRANT SELECT, INSERT, UPDATE ON dbo.Detalle_Pedido  TO cafe_operativo;
+GRANT SELECT, INSERT, UPDATE ON dbo.Producto        TO cafe_operativo;
+GRANT SELECT                 ON dbo.Categoria       TO cafe_operativo;
+GO
+
+
+
+
+/* Categorias de productos ofertados */
+
+INSERT INTO dbo.Categoria (nombre_Categoria, descripcion) VALUES
+('Productos Artesanales', 'Productos elaborados a partir de la cascara de cafe');
+GO
+ /* Productos */
+
+INSERT INTO dbo.Producto
+(nombre_Producto, descripcion, Precio, stock, id_Categoria)
+VALUES
+(
+'Mermelada de Cascara de Cafe',
+'Mermelada artesanal elaborada a partir de cascara de cafe con notas frutales y sabor autentico',
+18000.00,
+100,
+1
+),
+(
+'Dulce Artesanal de Cascara de Cafe',
+'Dulce artesanal elaborado con cascara de cafe, ideal para acompanar postres y bebidas',
+12000.00,
+100,
+1
+);
+GO
+
+/* insercion de Clientes */
+
+INSERT INTO dbo.Cliente (nombre, apellido, telefono, email, barrio, fecha_Registro) VALUES
+('Laura',    'Gomez',     '3001234567', 'laura.gomez@email.com',    'El Poblado',    '2024-01-10'),
+('Carlos',   'Ramirez',   '3102345678', 'carlos.ramirez@email.com', 'Laureles',      '2024-01-15'),
+('Maria',    'Torres',    '3203456789', 'maria.torres@email.com',   'Envigado',      '2024-02-05'),
+('Andres',   'Lopez',     '3154567890', 'andres.lopez@email.com',   'Belen',         '2024-02-20'),
+('Valentina','Herrera',   '3005678901', 'vale.herrera@email.com',   'Sabaneta',      '2024-03-01'),
+('Juan',     'Martinez',  '3116789012', 'juan.martinez@email.com',  'Itagui',        '2024-03-15'),
+('Sofia',    'Diaz',      '3207890123', 'sofia.diaz@email.com',     'El Poblado',    '2024-04-02'),
+('David',    'Sanchez',   '3018901234', 'david.sanchez@email.com',  'Estadio',       '2024-04-10'),
+('Camila',   'Vargas',    '3129012345', 'camila.vargas@email.com',  'Laureles',      '2024-05-01'),
+('Felipe',   'Castano',   '3210123456', 'felipe.castano@email.com', 'Robledo',       '2024-05-20');
+GO
+
+ /* insercion Pedidos */
+
+INSERT INTO dbo.Pedido (id_Cliente, fecha_Pedido, total, estado) VALUES
+(1,  '2024-06-01 08:30:00', 0, 'Entregado'),
+(2,  '2024-06-01 09:00:00', 0, 'Entregado'),
+(3,  '2024-06-02 10:15:00', 0, 'Entregado'),
+(4,  '2024-06-03 11:00:00', 0, 'Entregado'),
+(5,  '2024-06-04 08:45:00', 0, 'Entregado'),
+(6,  '2024-06-05 09:30:00', 0, 'Entregado'),
+(7,  '2024-06-06 14:00:00', 0, 'Pendiente'),
+(8,  '2024-06-07 15:30:00', 0, 'En preparacion'),
+(9,  '2024-06-07 16:00:00', 0, 'Pendiente'),
+(10, '2024-06-08 08:00:00', 0, 'Entregado');
+GO
+
+/*  Detalles de Pedidos */
+
+INSERT INTO dbo.Detalle_Pedido (id_Pedido, id_Producto, cantidad, precio_unitario) VALUES
+-- Pedido 1: Laura --
+(1, 1,  2,  4500.00),
+(1, 8,  2,  4000.00),
+-- Pedido 2: Carlos --
+(2, 2,  1,  5500.00),
+(2, 11, 1, 12000.00),
+-- Pedido 3: Maria --
+(3, 5,  2,  7000.00),
+(3, 9,  2,  3500.00),
+-- Pedido 4: Andres --
+(4, 3,  1,  5800.00),
+(4, 13, 1,  8000.00),
+-- Pedido 5: Valentina --
+(5, 4,  2,  5000.00),
+(5, 10, 1,  6000.00),
+-- Pedido 6: Juan --
+(6, 12, 1, 15000.00),
+(6, 6,  1,  5000.00),
+-- Pedido 7: Sofia --
+(7, 1,  1,  4500.00),
+(7, 7,  1,  7500.00),
+-- Pedido 8: David --
+(8, 14, 2,  9000.00),
+(8, 2,  2,  5500.00),
+-- Pedido 9: Camila --
+(9, 15, 3,  3500.00),
+(9, 3,  1,  5800.00),
+-- Pedido 10: Felipe --
+(10,11, 1, 12000.00),
+(10, 8, 1,  4000.00);
+GO
+
+/*  Actualizacion del total de cada pedido segun sus detalles */
+
+UPDATE P
+SET    P.total = (
+    SELECT ISNULL(SUM(D.subtotal), 0)
+    FROM   dbo.Detalle_Pedido D
+    WHERE  D.id_Pedido = P.id_Pedido
+)
+FROM dbo.Pedido P;
+GO
+
+
+
+/* CONSULTAS CON JOINs
+ Todos los pedidos con nombre del cliente y total */
+
+SELECT
+    P.id_Pedido,
+    C.nombre + ' ' + C.apellido  AS Cliente,
+    P.fecha_Pedido,
+    P.total,
+    P.estado
+FROM dbo.Pedido P
+INNER JOIN dbo.Cliente C ON C.id_Cliente = P.id_Cliente
+ORDER BY P.fecha_Pedido DESC;
+GO
+
+--  Detalle completo: pedido, producto y categoria --
+SELECT
+    P.id_Pedido,
+    C.nombre + ' ' + C.apellido    AS Cliente,
+    PR.nombre_Producto,
+    CAT.nombre_Categoria,
+    D.cantidad,
+    D.precio_unitario,
+    D.subtotal
+FROM dbo.Detalle_Pedido D
+INNER JOIN dbo.Pedido   P   ON P.id_Pedido    = D.id_Pedido
+INNER JOIN dbo.Cliente  C   ON C.id_Cliente   = P.id_Cliente
+INNER JOIN dbo.Producto PR  ON PR.id_Producto = D.id_Producto
+INNER JOIN dbo.Categoria CAT ON CAT.id_Categoria = PR.id_Categoria
+ORDER BY P.id_Pedido, D.id_Detalle;
+GO
+
+--Productos mas vendidos (TOP 5) --
+SELECT TOP 5
+    PR.nombre_Producto,
+    CAT.nombre_Categoria,
+    SUM(D.cantidad)   AS Total_Unidades_Vendidas,
+    SUM(D.subtotal)   AS Total_Ingresos
+FROM dbo.Detalle_Pedido D
+INNER JOIN dbo.Producto  PR  ON PR.id_Producto   = D.id_Producto
+INNER JOIN dbo.Categoria CAT ON CAT.id_Categoria = PR.id_Categoria
+GROUP BY PR.id_Producto, PR.nombre_Producto, CAT.nombre_Categoria
+ORDER BY Total_Unidades_Vendidas DESC;
+GO
+
+-- Clientes con mayor gasto total --
+
+SELECT
+    C.id_Cliente,
+    C.nombre + ' ' + C.apellido  AS Cliente,
+    C.barrio,
+    COUNT(P.id_Pedido)            AS Num_Pedidos,
+    SUM(P.total)                  AS Gasto_Total
+FROM dbo.Cliente C
+INNER JOIN dbo.Pedido P ON P.id_Cliente = C.id_Cliente
+GROUP BY C.id_Cliente, C.nombre, C.apellido, C.barrio
+ORDER BY Gasto_Total DESC;
+GO
+
+--  Productos con stock bajo (menos de 25 unidades) --
+SELECT
+    PR.id_Producto,
+    PR.nombre_Producto,
+    CAT.nombre_Categoria,
+    PR.stock,
+    PR.Precio
+FROM dbo.Producto PR
+INNER JOIN dbo.Categoria CAT ON CAT.id_Categoria = PR.id_Categoria
+WHERE PR.stock < 25
+ORDER BY PR.stock ASC;
+GO
+
+
+
+/* PROCEDIMIENTOS ALMACENADOS
+ Registrar un nuevo pedido completo */
+
+
+IF TYPE_ID('dbo.TipoItemPedido') IS NOT NULL
+    DROP TYPE dbo.TipoItemPedido;
+GO
+
+CREATE TYPE dbo.TipoItemPedido AS TABLE (
+    id_Producto     INT           NOT NULL,
+    cantidad        INT           NOT NULL
+);
+GO
+
+IF OBJECT_ID('dbo.sp_RegistrarPedido', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_RegistrarPedido;
+GO
+
+CREATE PROCEDURE dbo.sp_RegistrarPedido
+    @id_Cliente     INT,
+    @items          dbo.TipoItemPedido READONLY,
+    @id_Pedido_OUT  INT           OUTPUT,
+    @total_OUT      DECIMAL(12,2) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Valido que el cliente existe --
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Cliente WHERE id_Cliente = @id_Cliente)
+    BEGIN
+        RAISERROR('Cliente no encontrado.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar que hay items --
+    IF NOT EXISTS (SELECT 1 FROM @items)
+    BEGIN
+        RAISERROR('El pedido debe tener al menos un producto.', 16, 1);
+        RETURN;
+    END
+
+    -- Validar stock de cada producto --
+    IF EXISTS (
+        SELECT 1
+        FROM @items I
+        INNER JOIN dbo.Producto P ON P.id_Producto = I.id_Producto
+        WHERE P.stock < I.cantidad
+    )
+    BEGIN
+        RAISERROR('Stock insuficiente para uno o mas productos.', 16, 1);
+        RETURN;
+    END
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Insertar cabecera del pedido --
+
+        INSERT INTO dbo.Pedido (id_Cliente, fecha_Pedido, total, estado)
+        VALUES (@id_Cliente, GETDATE(), 0, 'Pendiente');
+
+        SET @id_Pedido_OUT = SCOPE_IDENTITY();
+
+        -- Insertar detalles tomando precio actual del producto --
+        INSERT INTO dbo.Detalle_Pedido (id_Pedido, id_Producto, cantidad, precio_unitario)
+        SELECT
+            @id_Pedido_OUT,
+            I.id_Producto,
+            I.cantidad,
+            P.Precio
+        FROM @items I
+        INNER JOIN dbo.Producto P ON P.id_Producto = I.id_Producto;
+
+        -- Descontar stock --
+        UPDATE P
+        SET    P.stock = P.stock - I.cantidad
+        FROM   dbo.Producto P
+        INNER JOIN @items I ON I.id_Producto = P.id_Producto;
+
+        -- Calcular y actualizar total del pedido
+        SELECT @total_OUT = SUM(subtotal)
+        FROM   dbo.Detalle_Pedido
+        WHERE  id_Pedido = @id_Pedido_OUT;
+
+        UPDATE dbo.Pedido
+        SET    total = @total_OUT
+        WHERE  id_Pedido = @id_Pedido_OUT;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+
+  /* Actualizar estado de un pedido
+ IN:  id_pedido, nuevo_estado
+ OUT: mensaje de confirmacion */
+
+IF OBJECT_ID('dbo.sp_ActualizarEstadoPedido', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_ActualizarEstadoPedido;
+GO
+
+CREATE PROCEDURE dbo.sp_ActualizarEstadoPedido
+    @id_Pedido      INT,
+    @nuevo_estado   VARCHAR(50),
+    @mensaje_OUT    VARCHAR(200) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Pedido WHERE id_Pedido = @id_Pedido)
+    BEGIN
+        SET @mensaje_OUT = 'ERROR: Pedido ' + CAST(@id_Pedido AS VARCHAR) + ' no existe.';
+        RETURN;
+    END
+
+    IF @nuevo_estado NOT IN ('Pendiente','En preparacion','Entregado','Cancelado')
+    BEGIN
+        SET @mensaje_OUT = 'ERROR: Estado "' + @nuevo_estado + '" no es valido.';
+        RETURN;
+    END
+
+    DECLARE @estado_actual VARCHAR(50);
+    SELECT @estado_actual = estado FROM dbo.Pedido WHERE id_Pedido = @id_Pedido;
+
+    IF @estado_actual = 'Entregado'
+    BEGIN
+        SET @mensaje_OUT = 'ADVERTENCIA: El pedido ya fue entregado y no puede modificarse.';
+        RETURN;
+    END
+
+    UPDATE dbo.Pedido
+    SET    estado = @nuevo_estado
+    WHERE  id_Pedido = @id_Pedido;
+
+    SET @mensaje_OUT = 'OK: Pedido ' + CAST(@id_Pedido AS VARCHAR) +
+                       ' actualizado de "' + @estado_actual +
+                       '" a "' + @nuevo_estado + '".';
+END;
+GO
+
+
+/*  SP 3: Consultar historial de pedidos de un cliente */
+-
+IF OBJECT_ID('dbo.sp_HistorialCliente', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_HistorialCliente;
+GO
+
+CREATE PROCEDURE dbo.sp_HistorialCliente
+    @id_Cliente         INT,
+    @num_pedidos_OUT    INT           OUTPUT,
+    @total_gastado_OUT  DECIMAL(12,2) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Cliente WHERE id_Cliente = @id_Cliente)
+    BEGIN
+        RAISERROR('Cliente no encontrado.', 16, 1);
+        RETURN;
+    END
+
+    
+    SELECT
+        @num_pedidos_OUT   = COUNT(*),
+        @total_gastado_OUT = ISNULL(SUM(total), 0)
+    FROM dbo.Pedido
+    WHERE id_Cliente = @id_Cliente;
+
+    /* Resultado detallado */
+
+    SELECT
+        P.id_Pedido,
+        P.fecha_Pedido,
+        P.estado,
+        P.total,
+        (
+            SELECT STRING_AGG(PR.nombre_Producto + ' x' + CAST(D.cantidad AS VARCHAR), ', ')
+            FROM   dbo.Detalle_Pedido D
+            INNER JOIN dbo.Producto PR ON PR.id_Producto = D.id_Producto
+            WHERE  D.id_Pedido = P.id_Pedido
+        ) AS Productos
+    FROM dbo.Pedido P
+    WHERE P.id_Cliente = @id_Cliente
+    ORDER BY P.fecha_Pedido DESC;
+END;
+GO
+
+/* reporte de ventas por rango de fecha */
+
+IF OBJECT_ID('dbo.sp_ReporteVentasCategorias', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_ReporteVentasCategorias;
+GO
+
+CREATE PROCEDURE dbo.sp_ReporteVentasCategorias
+    @fecha_inicio       DATE,
+    @fecha_fin          DATE,
+    @num_categorias_OUT INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_inicio > @fecha_fin
+    BEGIN
+        RAISERROR('La fecha de inicio no puede ser mayor a la fecha fin.', 16, 1);
+        RETURN;
+    END
+
+    SELECT
+        CAT.nombre_Categoria,
+        COUNT(DISTINCT P.id_Pedido)   AS Num_Pedidos,
+        SUM(D.cantidad)               AS Unidades_Vendidas,
+        SUM(D.subtotal)               AS Ingresos_Total,
+        AVG(D.subtotal)               AS Ticket_Promedio
+    FROM dbo.Detalle_Pedido D
+    INNER JOIN dbo.Pedido   P   ON P.id_Pedido    = D.id_Pedido
+    INNER JOIN dbo.Producto PR  ON PR.id_Producto = D.id_Producto
+    INNER JOIN dbo.Categoria CAT ON CAT.id_Categoria = PR.id_Categoria
+    WHERE CAST(P.fecha_Pedido AS DATE) BETWEEN @fecha_inicio AND @fecha_fin
+    GROUP BY CAT.id_Categoria, CAT.nombre_Categoria
+    ORDER BY Ingresos_Total DESC;
+
+    SELECT @num_categorias_OUT = @@ROWCOUNT;
+END;
+GO
+
+
+/* ejercicios practicos de procedimientos */
+
+-- Crear nuevo pedido para cliente 1 --
+
+DECLARE @items    dbo.TipoItemPedido;
+DECLARE @nuevo_id INT;
+DECLARE @total    DECIMAL(12,2);
+
+INSERT INTO @items (id_Producto, cantidad) VALUES (1, 2), (8, 1);
+
+EXEC dbo.sp_RegistrarPedido
+    @id_Cliente    = 1,
+    @items         = @items,
+    @id_Pedido_OUT = @nuevo_id OUTPUT,
+    @total_OUT     = @total    OUTPUT;
+
+PRINT 'Pedido creado: ID=' + CAST(@nuevo_id AS VARCHAR) +
+      ', Total=$' + CAST(@total AS VARCHAR);
+GO
+
+-- Cambiar estado de pedido --
+
+DECLARE @msg VARCHAR(200);
+EXEC dbo.sp_ActualizarEstadoPedido
+    @id_Pedido    = 7,
+    @nuevo_estado = 'En preparacion',
+    @mensaje_OUT  = @msg OUTPUT;
+PRINT @msg;
+GO
+
+-- Historial del cliente 2 --
+
+DECLARE @npedidos INT;
+DECLARE @gastado  DECIMAL(12,2);
+EXEC dbo.sp_HistorialCliente
+    @id_Cliente        = 2,
+    @num_pedidos_OUT   = @npedidos OUTPUT,
+    @total_gastado_OUT = @gastado  OUTPUT;
+PRINT 'Cliente 2 | Pedidos: ' + CAST(@npedidos AS VARCHAR) +
+      ' | Total gastado: $' + CAST(@gastado AS VARCHAR);
+GO
+
+-- Reporte de ventas de junio 2024 --
+DECLARE @ncats INT;
+EXEC dbo.sp_ReporteVentasCategorias
+    @fecha_inicio       = '2024-06-01',
+    @fecha_fin          = '2024-06-30',
+    @num_categorias_OUT = @ncats OUTPUT;
+PRINT 'Categorias con ventas en el periodo: ' + CAST(@ncats AS VARCHAR);
+GO
+
+
+            </code>
+        </pre>
+    </div>
+</body>
+</html>
+
+<footer>
+    <p><a href="#">Tratamiento de datos</a></p>
+    <p>Todos los derechos reservados ©</p>
+    <p>🌍 www.delcerezoalamesa.com</p>
+    <p>☎ 6042236598</p>
+    <p>📩 delcerezoalamesa@gmail.com</p>
+</footer>
